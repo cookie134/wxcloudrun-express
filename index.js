@@ -71,12 +71,6 @@ app.post('/api/archive', async (req, res) => {
 });
 
 
-// --- 3. 模板原有的 /api/count 接口可以保留或删除 ---
-const counter = require('./db/counter');
-app.post('/api/count', async (req, res) => {
-    // ... (保持不变)
-});
-
 const port = process.env.PORT || 80;
 async function bootstrap() {
   app.listen(port, () => {
