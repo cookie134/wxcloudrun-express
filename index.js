@@ -13,22 +13,19 @@ const mysql = require('mysql2/promise');
 
 // index.js
 
-// --- 数据库连接池（终极诊断版，全部硬编码）---
 const pool = mysql.createPool({
-    // ！！！使用你截图中明确提供的内网 IP 地址
-    host: '10.12.110.107', 
-
-    // ！！！明确指定端口
+    host: '10.12.110.107',
     port: 3306,
+    user: 'root',
+    password: 'hN8fmMCR',
+    database: 'nodejs_demo',
 
-    // ！！！使用 root 用户
-    user: 'root', 
-
-    // ！！！使用你之前部署成功页面上看到的密码
-    password: 'hN8fmMCR', 
-
-    // ！！！使用我们确认的正确数据库名
-    database: 'nodejs_demo'
+    // === 新增的关键配置 ===
+    waitForConnections: true, // 在没有可用连接时等待，而不是立即报错
+    connectionLimit: 10,      // 连接池中的最大连接数
+    queueLimit: 0,            // 等待队列的最大长度（0为不限制）
+    enableKeepAlive: true,    // 启用 TCP KeepAlive
+    keepAliveInitialDelay: 0  // 立即开始发送 KeepAlive 包
 });
 
 // ... 后续所有路由和 app.listen 的代码保持不变 ...
