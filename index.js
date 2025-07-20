@@ -2,14 +2,36 @@ const express = require('express');
 const app = express();
 const mysql = require('mysql2/promise');
 
-// --- 1. 数据库连接池配置（关键修改！） ---
+// // --- 1. 数据库连接池配置（关键修改！） ---
+// const pool = mysql.createPool({
+//     host: process.env.MYSQL_ADDRESS,
+//     user: process.env.MYSQL_USERNAME,
+//     password: process.env.MYSQL_PASSWORD,
+//     // ！！！使用你截图中看到的正确数据库名！！！
+//     database: 'nodejs_demo' 
+// });
+
+// index.js
+
+// --- 数据库连接池（终极诊断版，全部硬编码）---
 const pool = mysql.createPool({
-    host: process.env.MYSQL_ADDRESS,
-    user: process.env.MYSQL_USERNAME,
-    password: process.env.MYSQL_PASSWORD,
-    // ！！！使用你截图中看到的正确数据库名！！！
-    database: 'nodejs_demo' 
+    // ！！！使用你截图中明确提供的内网 IP 地址
+    host: '10.12.110.107', 
+
+    // ！！！明确指定端口
+    port: 3306,
+
+    // ！！！使用 root 用户
+    user: 'root', 
+
+    // ！！！使用你之前部署成功页面上看到的密码
+    password: 'hN8fmMCR', 
+
+    // ！！！使用我们确认的正确数据库名
+    database: 'nodejs_demo'
 });
+
+// ... 后续所有路由和 app.listen 的代码保持不变 ...
 
 // body 解析中间件
 app.use(express.urlencoded({ extended: false }));
