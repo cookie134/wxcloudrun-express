@@ -69,6 +69,18 @@ app.post('/api/archive', async (req, res) => {
         res.status(500).json({ code: -1, message: '服务器错误' });
     }
 });
+// 在后端的 index.js 中，app.post('/api/archive', ...) 的下面添加：
+
+app.get('/api/archives', async (req, res) => {
+  try {
+    // 从数据库的 'archives' 表中查询所有记录，按创建时间降序排列
+    const [rows] = await pool.query('SELECT * FROM archives ORDER BY createdAt DESC');
+    res.json({ code: 0, data: rows });
+  } catch (error) {
+    console.error('查询归档列表失败:', error);
+    res.status(500).json({ code: -1, message: '服务器错误' });
+  }
+});
 
 
 const port = process.env.PORT || 80;
