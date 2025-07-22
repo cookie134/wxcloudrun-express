@@ -5,6 +5,12 @@
 const express = require('express');
 const app = express(); // 创建 Express 应用实例
 
+const cloud = require('wx-server-sdk');
+cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
+
+const excel = require('exceljs');
+const axios = require('axios');
+
 const mysql = require('mysql2/promise');
 
 // --- 1. 数据库连接池配置（已优化，无需修改） ---
@@ -99,9 +105,6 @@ app.get('/', (req, res) => {
     res.send('<h1>归档服务后端已就绪！</h1>');
 });
 
-
-const excel = require('exceljs');
-const axios = require('axios');
 
 // === 在这里添加全新的、强大的图文导出接口 ===
 app.post('/api/export', async (req, res) => {
