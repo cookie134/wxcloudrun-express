@@ -100,6 +100,94 @@ app.get('/', (req, res) => {
 });
 
 
+const excel = require('exceljs');
+const axios = require('axios');
+
+// === 在这里添加全新的、强大的图文导出接口 ===
+app.post('/api/export', async (req, res) => {
+    const { archiveList } = req.body; // 从小程序接收要导出的数据
+    if (!archiveList || archiveList.length === 0) {
+        return res.status(400).json({ code: -1, message: '没有数据可导出' });
+    }
+
+    try {
+        // 1. 创建 Excel 工作簿和工作表
+        const workbook = new excel.Workbook();
+        const worksheet = workbook.addWorksheet('归档记录');
+
+        // 2. 设置列头和列宽
+        worksheet.columns = [
+            { header: '归档编号', key: 'id', width: 30 },
+            { header: '状态', key: 'status', width: 10 },
+            { header: '归档时间', key: 'createTime', width: 25 },
+            { header: '所属公司', key: 'company', width: 20 },
+            { header: '车牌号', key: 'plateNumber', width: 15 },
+            { header: '上报种类', key: 'reportType', width: 15 },
+            { header: '上报人', key: 'reporter', width: 15 },
+            { header: '上报内容', key: 'content', width: 40 },
+            { header: '照片', key: 'images', width: 30 } // 用于放图片
+        ];
+        
+        // 3. 获取所有图片文件的临时下载链接
+        const fileIDs = archiveList.flatMap(item => item.reportInfo?.media?.map(m => m.fileID) || []);
+        const fileResult = await cloud.getTempFileURL({ fileList: fileIDs });
+        const fileMap = new Map(fileResult.fileList.map(f => [f.fileID, f.tempFileURL]));
+
+        // 4. 遍历数据，填充行和图片
+        for (const [index, item] of archiveList.entries()) {
+            const rowNumber = index + 2; // Excel 行号从 1 开始，第 1 行是表头
+            
+            // 添加文本数据
+            worksheet.addRow({
+                id: item.id,
+                status: item.status,
+                createTime: new Date(item.createTime).toLocaleString(),
+                company: item.vehicleInfo?.company,
+                plateNumber: item.vehicleInfo?.plateNumber,
+                reportType: item.reportInfo?.reportType,
+                reporter: item.reportInfo?.reporter,
+                content: item.reportInfo?.content,
+            });
+            
+            // 设置行高以容纳图片
+            worksheet.getRow(rowNumber).height = 80;
+
+            // 下载并嵌入图片
+            if (item.reportInfo?.media) {
+                const imageUrl = fileMap.get(item.reportInfo.media[0]?.fileID);
+                if (imageUrl) {
+                    const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+                    const imageId = workbook.addImage({
+                        buffer: response.data,
+                        extension: 'jpeg',
+                    });
+                    // 将图片放入 'I' 列 (第九列) 的对应单元格
+                    worksheet.addImage(imageId, {
+                        tl: { col: 8.05, row: rowNumber - 0.95 }, // 左上角坐标
+                        ext: { width: 100, height: 100 }          // 图片尺寸
+                    });
+                }
+            }
+        }
+        
+        // 5. 将生成的 Excel 文件上传到云存储
+        const buffer = await workbook.xlsx.writeBuffer();
+        const cloudPath = `archives_export/export_${Date.now()}.xlsx`;
+        const uploadResult = await cloud.uploadFile({ cloudPath, fileContent: buffer });
+
+        // 6. 获取上传后的文件临时链接并返回给前端
+        const linkResult = await cloud.getTempFileURL({ fileList: [uploadResult.fileID] });
+        
+        res.json({ code: 0, downloadUrl: linkResult.fileList[0].tempFileURL });
+
+    } catch (error) {
+        console.error('导出 Excel 失败:', error);
+        res.status(500).json({ code: -1, message: '服务器导出失败' });
+    }
+});
+
+
+
 // === 4. 启动服务 ===
 // 监听云托管环境指定的端口，如果没有则默认为 80
 const port = process.env.PORT || 80;
