@@ -6,7 +6,7 @@ const express = require('express');
 const app = express(); // 创建 Express 应用实例
 
 const cloud = require('wx-server-sdk');
-cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
+cloud.init({ env: 'prod-2gqay2e7eb20dda3' }); 
 
 const excel = require('exceljs');
 const axios = require('axios');
